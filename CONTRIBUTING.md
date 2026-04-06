@@ -1,97 +1,54 @@
-# Contribution guidelines
+# Linee guida per la contribuzione
 
-Contributing to this project should be as easy and transparent as possible, whether it's:
+Contribuire a questo progetto deve essere il più semplice e trasparente possibile, che si tratti di:
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
+- Segnalare un bug
+- Discutere lo stato attuale del codice
+- Inviare una correzione
+- Proporre nuove funzionalità
 
-## Github is used for everything
+## GitHub viene usato per tutto
 
-Github is used to host code, to track issues and feature requests, as well as accept pull requests.
+Usiamo GitHub per ospitare il codice, tracciare i problemi (issue), le richieste di funzionalità e accettare le Pull Request.
 
-Pull requests are the best way to propose changes to the codebase.
+Le Pull Request sono il modo migliore per proporre modifiche:
 
-1. Fork the repo and create your branch from `master`.
-2. If you've changed something, update the documentation.
-3. Make sure your code lints (using black).
-4. Test you contribution.
-5. Issue that pull request!
+1. Fai un Fork del repo e crea il tuo branch da `main`.
+2. Se modifichi qualcosa, aggiorna la documentazione.
+3. Assicurati che il codice superi il linting (usando ruff/black).
+4. Testa il tuo contributo.
+5. Invia la Pull Request!
 
-## Any contributions you make will be under the MIT Software License
+## Licenza MIT
 
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+Ogni contributo inviato sarà rilasciato sotto la stessa [Licenza MIT](http://choosealicense.com/licenses/mit/) che copre il progetto.
 
-## Report bugs using Github's [issues](../../issues)
+## Segnalazione dei Bug
 
-GitHub issues are used to track public bugs.
-Report a bug by [opening a new issue](../../issues/new/choose); it's that easy!
+Usa le [Issue di GitHub](../../issues) per segnalare bug pubblici. Sii specifico e includi:
+- Un riassunto rapido.
+- Passaggi per riprodurre il problema.
+- Risultato atteso vs Risultato ottenuto.
 
-## Write bug reports with detail, background, and sample code
+## Stile del Codice
 
-**Great Bug Reports** tend to have:
+Usa [ruff](https://github.com/astral-sh/ruff) (che sostituisce black e flake8) e [prettier](https://prettier.io/) per mantenere lo stile uniforme.
+In alternativa, usa i `pre-commit` già configurati in questo repository.
 
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can.
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+## Testa le tue modifiche
 
-People _love_ thorough bug reports. I'm not even kidding.
+Questa integrazione è nata originariamente da un blueprint, ma ora è un progetto autonomo chiamato **BLE Radar**.
 
-## Use a Consistent Coding Style
+Il progetto include un ambiente di sviluppo in container, facile da avviare con Visual Studio Code. Avrai un'istanza di Home Assistant isolata e già configurata tramite il file [`.devcontainer.json`](./.devcontainer.json).
 
-Use [black](https://github.com/ambv/black) and [prettier](https://prettier.io/)
-to make sure the code follows the style.
-
-Or use the `pre-commit` settings implemented in this repository
-(see deicated section below).
-
-## Test your code modification
-
-This custom component is based on [integration_blueprint template](https://github.com/custom-components/integration_blueprint).
-
-It comes with development environment in a container, easy to launch
-if you use Visual Studio Code. With this container you will have a stand alone
-Home Assistant instance running and already configured with the included
-[`.devcontainer.json`](./.devcontainer.json)
-file.
-
-You can use the `pre-commit` settings implemented in this repository to have
-linting tool checking your contributions (see dedicated section below).
-
-You should also verify that existing [tests](./tests) are still working
-and you are encouraged to add new ones.
-You can run the tests using the following command from the root folder:
+Verifica sempre che i [test](./tests) esistenti funzionino ancora ed è caldamente consigliato aggiungerne di nuovi. Puoi avviare i test dalla root con:
 
 `./scripts/test`
 
-If any of the tests fail, make the necessary changes to the tests as part of
-your changes to the integration.
-
 ## Pre-commit
 
-You can use the [pre-commit](https://pre-commit.com/) settings included in the
-repostory to have code style and linting checks.
-
-With `pre-commit` tool already installed,
-activate the settings of the repository:
+Puoi usare i settaggi di [pre-commit](https://pre-commit.com/) inclusi nel repository per i controlli automatici.
+Con lo strumento installato, attiva i settaggi con:
 
 ```console
 $ pre-commit install
-```
-
-Now the pre-commit tests will be done every time you commit.
-
-You can run the tests on all repository file with the command:
-
-```console
-$ pre-commit run --all-files
-```
-
-## License
-
-By contributing, you agree that your contributions will be licensed under its MIT License.
