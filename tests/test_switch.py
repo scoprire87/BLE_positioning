@@ -1,35 +1,28 @@
-"""Test Bermuda BLE Trilateration switch."""
+"""Test BLE Radar switch."""
 
 from __future__ import annotations
+
+# In futuro, se riattiverai i test per gli switch, 
+# questi import punteranno al nuovo dominio ble_radar.
 
 # from homeassistant.components.switch import SERVICE_TURN_OFF
 # from homeassistant.components.switch import SERVICE_TURN_ON
 # from homeassistant.const import ATTR_ENTITY_ID
 
+# from custom_components.ble_radar.const import DEFAULT_NAME
+# from custom_components.ble_radar.const import SWITCH
 
-# from custom_components.bermuda.const import DEFAULT_NAME
-
-
-# from unittest.mock import call
-# from unittest.mock import patch
-
-
-# from custom_components.bermuda.const import SWITCH
-
-# Not currently used - commenting out
+# Al momento non utilizzato - manteniamo la struttura aggiornata per BLE Radar
 # async def test_switch_services(hass: HomeAssistant):
 #     """Test switch services."""
-#     # Create a mock entry so we don't have to go through config flow
+#     # Crea un'entry finta per saltare il config flow
 #     config_entry = MockConfigEntry(domain=DOMAIN, data=MOCK_CONFIG, entry_id="test")
 #     assert await async_setup_entry(hass, config_entry)
 #     await hass.async_block_till_done()
 
-# Functions/objects can be patched directly
-# in test code as well and can be used to test
-# additional things, like whether a function
-# was called or what arguments it was called with
+# Esempio di patch aggiornato per il nuovo coordinatore
 # with patch(
-#     "custom_components.bermuda.BermudaDataUpdateCoordinator.async_set_title"
+#     "custom_components.ble_radar.BleRadarDataUpdateCoordinator.async_set_title"
 # ) as title_func:
 #     await hass.services.async_call(
 #         SWITCH,
@@ -38,15 +31,3 @@ from __future__ import annotations
 #         blocking=True,
 #     )
 #     assert title_func.called
-#     assert title_func.call_args == call("foo")
-
-#     title_func.reset_mock()
-
-#     await hass.services.async_call(
-#         SWITCH,
-#         SERVICE_TURN_ON,
-#         service_data={ATTR_ENTITY_ID: f"{SWITCH}.{DEFAULT_NAME}_{SWITCH}"},
-#         blocking=True,
-#     )
-#     assert title_func.called
-#     assert title_func.call_args == call("bar")
