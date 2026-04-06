@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Bermuda BLE Trilateration",
-        "description": "Hvis du trenger hjep til konfigurasjon ta en titt her: https://github.com/agittins/bermuda",
+        "title": "BLE Radar",
+        "description": "Hvis du trenger hjelp med konfigurasjonen, ta en titt på vår [GitHub-side](https://github.com/scoprire87/BLE_positioning).",
         "data": {
           "username": "Brukernavn",
           "password": "Passord"
@@ -11,21 +11,141 @@
       }
     },
     "error": {
-      "auth": "Brukernavn/Passord er feil."
+      "auth": "Brukernavn eller passord er feil."
     },
     "abort": {
-      "single_instance_allowed": "Denne integrasjonen kan kun konfigureres en gang."
+      "single_instance_allowed": "Denne integrasjonen kan kun konfigureres én gang."
     }
   },
   "options": {
+    "error": {
+      "some_active": "Du har i det minste noen aktive enheter, dette er bra.",
+      "no_scanners": "Du må konfigurere noen Bluetooth-skannere før BLE Radar har noe å jobbe med. \nEn ESPHome bluetooth_proxy, Shelly bluetooth proxy eller lokal Bluetooth-adapter er en god start.",
+      "no_devices": "Ingen Bluetooth-enheter rapporteres aktivt fra skannerne dine. \nDu må løse dette før BLE Radar kan kartlegge rommene dine."
+    },
     "step": {
-      "user": {
+      "init": {
+        "title": "Konfigurer BLE Radar",
+        "description": "BLE Radar ser for øyeblikket:\n- {device_counter_active} aktive av {device_counter_devices} Bluetooth-enheter.\n- {scanner_counter_active} aktive av {scanner_counter_scanners} Bluetooth-skannere.\n\n{status}"
+      },
+      "globalopts": {
+        "title": "Globale innstillinger (Fallback)",
         "data": {
-          "binary_sensor": "Binær sensor aktivert",
-          "sensor": "Sensor aktivert",
-          "switch": "Bryter aktivert"
+          "max_area_radius": "Maks radius i meter for enkel AREA-deteksjon (Fallback)",
+          "max_velocity": "Maks hastighet (m/s) - ignorer målinger som indikerer raskere bevegelse. 3m/s (10km/h) er bra.",
+          "devtracker_nothome_timeout": "Devtracker tidsavbrudd i sekunder for å regne en enhet som `Borte` (Not Home).",
+          "update_interval": "Oppdateringsintervall - Hvor ofte (i sekunder) sensorene skal oppdateres.",
+          "smoothing_samples": "Utjevningsprøver - hvor mange målinger som skal brukes for å stabilisere avstanden.",
+          "attenuation": "Demping - Miljødempingsfaktor for avstandsberegning (Fallback).",
+          "ref_power": "Referansestrøm - Standard RSSI på 1 meters avstand (Fallback).",
+          "configured_devices": "Konfigurerte enheter - Velg hvilke Bluetooth-enheter eller Beacons som skal spores."
+        },
+        "data_description": {
+          "max_area_radius": "I fallback-funksjonen `AREA` vil en enhet merkes i området til sin nærmeste mottaker, hvis den er innenfor denne radiusen.",
+          "max_velocity": "Hvis en måling tilsier at en enhet beveger seg raskere enn dette, ignoreres den. Mennesker går vanligvis i 1,4 m/s.",
+          "devtracker_nothome_timeout": "Hvor raskt en device_tracker skal settes til `not_home` etter vi mister signalet. 30 til 300 sekunder er et godt valg.",
+          "update_interval": "Kortere avstander oppdateres umiddelbart, men økning i avstand begrenses av dette for å spare databaseplass.",
+          "smoothing_samples": "Hvor mange målinger som brukes for å jevne ut avstanden. Større tall gir tregere avstandsøkning. 10 eller 20 er bra.",
+          "attenuation": "Brukes til fallback-avstandsberegning. Juster denne verdien for å kompensere for miljømessige hindringer.",
+          "ref_power": "Brukes til fallback-avstandsberegning. Plasser enheten 1 meter fra skanneren og juster denne til sensoren viser 1 meter."
+        }
+      },
+      "selectdevices": {
+        "title": "Velg enheter",
+        "description": "Velg hvilke enheter du vil spore. Hvis ingen enheter vises, mottar ikke BLE Radar data. Sørg for at du har en ESPHome ble_proxy, Shelly med Bluetooth slått på, eller lokal Bluetooth."
+      },
+      "calibration1_global": {
+        "title": "Kalibrering 1: Global (Fallback)",
+        "description": "Dette trinnet etablerer standardverdier for fallback-avstandsberegning.\n\n{details}\n{summary}\nKlikk for instruksjoner!{summary_end}\n\nVelg din mest vanlige maskinvare som en 'referanse'. Hvis du f.eks. bruker mest Shelly, velg en slik skanner som referanse.\n\n- Velg en enhet og en skanner nedenfor.\n- Plasser enheten nøyaktig 1 meter fra skanneren, uten hindringer imellom.\n- Klikk på 'SEND INN' og noter RSSI-verdiene i tabellen.\n- Når signalet er stabilt, legg inn verdien i `Referansestrøm` og klikk 'SEND INN'.\n- Eksperimenter med `Demping` på lengre avstander (f.eks. 5 meter) for å finne rett justering.\n- Når du er fornøyd, merk av for 'Lagre og lukk' og klikk 'SEND INN'.\n{details_end}\n{suffix}",
+        "data": {
+          "configured_devices": "Enhet",
+          "configured_scanners": "Skanner",
+          "save_and_close": "Lagre og lukk",
+          "attenuation": "Demping",
+          "ref_power": "Referansestrøm"
+        },
+        "data_description": {
+          "save_and_close": "Når kalibreringen er ferdig, kryss av her og klikk Send inn for å lagre.",
+          "attenuation": "Juster dempingen slik at den beregnede avstanden stemmer overens med den fysiske avstanden.",
+          "ref_power": "Legg inn gjennomsnittlig RSSI oppdaget på 1 meters avstand."
+        }
+      },
+      "calibration2_scanners": {
+        "title": "Kalibrering 2: Skanner-offset",
+        "description": "Valgfritt: Juster følsomheten for hver skanner sammenlignet med standard. La skanneren fra trinn 1 stå på Null.\n\n{suffix}",
+        "data": {
+          "configured_devices": "Enhet",
+          "save_and_close": "Lagre og lukk",
+          "scanner_info": "RSSI-offset per skanner"
+        },
+        "data_description": {
+          "scanner_info": "La stå på null for å bruke globale innstillinger. Negative verdier øker avstanden, positive verdier reduserer den."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "distance": {
+        "name": "Avstand (Fallback)"
+      },
+      "area": {
+        "name": "Radar Room"
+      }
+    }
+  },
+  "services": {
+    "dump_devices": {
+      "name": "Eksporter enheter",
+      "description": "Returnerer den interne datastrukturen for feilsøking. Inkluderer RSSI og annen info fra hver skanner.",
+      "fields": {
+        "addresses": {
+          "name": "MAC-adresser",
+          "description": "Valgfri liste med MAC-adresser adskilt med mellomrom for eksport."
+        },
+        "configured_devices": {
+          "name": "Bare konfigurerte enheter",
+          "description": "Inkluder kun skannere og enheter du har konfigurert."
+        },
+        "redact": {
+          "name": "Skjul MAC",
+          "description": "Sett til TRUE for å skjule MAC-adresser i loggen av personvernhensyn."
+        }
+      }
+    },
+    "calibrate_anchor": {
+      "name": "Kalibrer Anker (Proxy)",
+      "description": "Knytter en kjent enhet til en skanner (anker) for å kalibrere referansesignalet ved 1 meter.",
+      "fields": {
+        "scanner_id": {
+          "name": "Skanner-ID",
+          "description": "MAC-adressen eller ID-en til skanneren/proxyen (f.eks. Shelly eller ESPHome)."
+        },
+        "ref_rssi": {
+          "name": "Referanse-RSSI",
+          "description": "Referanse-RSSI verdi på 1 meters avstand."
+        }
+      }
+    },
+    "map_room_point": {
+      "name": "Kartlegg Rompunkt (Radar)",
+      "description": "Tar et radio-øyeblikksbilde (Fingerprint) av alle skannere som ser enheten akkurat nå, og knytter det til det angitte rommet.",
+      "fields": {
+        "room_name": {
+          "name": "Romnavn",
+          "description": "Navnet på rommet du er i nå (f.eks. Kjøkken, Stue, Bad)."
+        },
+        "target_mac": {
+          "name": "Enhets-MAC",
+          "description": "MAC-adressen til enheten du bruker til kartlegging (f.eks. smarttelefonen din)."
+        }
+      }
+    }
+  },
+  "issues": {
+    "scanner_without_area": {
+      "title": "Noen Bluetooth-proxyer mangler et OMRÅDE",
+      "description": "BLE Radar krever at alle Bluetooth-proxyer har et tildelt område (Area) for å fungere korrekt i fallback-modus. Tildel et område ved å besøke enhetens side (via `Enheter og tjenester`), og klikk på blyantikonet øverst til høyre. Følgende proxyer mangler områdetildeling:\n\n{scannerlist}"
     }
   }
 }
