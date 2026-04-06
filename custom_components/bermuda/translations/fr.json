@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Bermuda BLE Trilateration",
-        "description": "Si vous avez besoin d'aide pour la configuration, regardez ici: https://github.com/agittins/bermuda",
+        "title": "BLE Radar",
+        "description": "Si vous avez besoin d'aide pour la configuration, consultez notre page [GitHub](https://github.com/scoprire87/BLE_positioning).",
         "data": {
           "username": "Identifiant",
           "password": "Mot de Passe"
@@ -14,18 +14,138 @@
       "auth": "Identifiant ou mot de passe erroné."
     },
     "abort": {
-      "single_instance_allowed": "Une seule instance est autorisée."
+      "single_instance_allowed": "Une seule instance est autorisée pour cette intégration."
     }
   },
   "options": {
+    "error": {
+      "some_active": "Vous avez au moins quelques appareils actifs, c'est une bonne chose.",
+      "no_scanners": "Vous devez configurer des scanners Bluetooth avant que BLE Radar ne puisse fonctionner. \nUn proxy Bluetooth ESPHome, un proxy Bluetooth Shelly ou un adaptateur Bluetooth local feront l'affaire pour commencer.",
+      "no_devices": "Aucun appareil Bluetooth n'est activement signalé par vos scanners. \nVous devrez résoudre ce problème pour que BLE Radar puisse cartographier vos pièces."
+    },
     "step": {
-      "user": {
+      "init": {
+        "title": "Configurer BLE Radar",
+        "description": "BLE Radar détecte actuellement :\n- {device_counter_active} actifs sur {device_counter_devices} appareils Bluetooth.\n- {scanner_counter_active} actifs sur {scanner_counter_scanners} scanners Bluetooth.\n\n{status}"
+      },
+      "globalopts": {
+        "title": "Paramètres globaux (Fallback)",
         "data": {
-          "binary_sensor": "Capteur binaire activé",
-          "sensor": "Capteur activé",
-          "switch": "Interrupteur activé"
+          "max_area_radius": "Rayon maximum en mètres pour la détection AREA (Fallback)",
+          "max_velocity": "Vitesse maximale (m/s) - ignore les lectures trop rapides. 3m/s (10km/h) est une bonne valeur.",
+          "devtracker_nothome_timeout": "Délai d'attente du Devtracker (en secondes) pour considérer un appareil comme `Absent`.",
+          "update_interval": "Intervalle de mise à jour - Fréquence (en secondes) de mise à jour des capteurs.",
+          "smoothing_samples": "Échantillons de lissage - nombre d'échantillons à utiliser pour stabiliser le signal.",
+          "attenuation": "Atténuation - Facteur d'atténuation environnementale pour le calcul de la distance (Fallback).",
+          "ref_power": "Puissance de référence - RSSI par défaut à 1 mètre de distance (Fallback).",
+          "configured_devices": "Appareils configurés - Choisissez les appareils Bluetooth ou balises à suivre."
+        },
+        "data_description": {
+          "max_area_radius": "Dans la fonction `AREA` (fallback), un appareil sera assigné à la zone du récepteur le plus proche s'il se trouve dans ce rayon.",
+          "max_velocity": "Si une lecture indique qu'un appareil s'éloigne plus vite que cette limite, elle est ignorée. Un humain marche à environ 1,4 m/s.",
+          "devtracker_nothome_timeout": "Délai avant de marquer un appareil comme `not_home` après la perte du signal. 300 secondes est un bon compromis.",
+          "update_interval": "Les réductions de distance seront appliquées immédiatement, mais les augmentations seront limitées par cet intervalle pour éviter de surcharger la base de données.",
+          "smoothing_samples": "Nombre de paquets pour le lissage de la distance. Un chiffre plus élevé rend le signal plus stable mais moins réactif. 10 ou 20 est un bon choix.",
+          "attenuation": "Utilisé pour l'estimation de distance (Fallback). Ajustez cette valeur pour compenser les obstacles environnementaux.",
+          "ref_power": "Utilisé pour l'estimation de distance (Fallback). Placez votre balise à 1 mètre du scanner et ajustez cette valeur."
+        }
+      },
+      "selectdevices": {
+        "title": "Sélectionner les appareils",
+        "description": "Choisissez les appareils que vous souhaitez suivre. Si aucun appareil n'apparaît ci-dessous, BLE Radar ne reçoit aucune donnée des scanners Bluetooth. Assurez-vous d'avoir configuré des proxys Bluetooth (ESPHome ou Shelly)."
+      },
+      "calibration1_global": {
+        "title": "Étalonnage 1 : Global (Fallback)",
+        "description": "Cette étape permet d'établir les paramètres par défaut pour le calcul géométrique des distances (utilisé lorsque le Radar ne trouve pas la pièce).\n\n{details}\n{summary}\nCliquez ici pour les instructions !{summary_end}\n\nChoisissez votre matériel le plus courant comme 'référence'. Par exemple, si vous utilisez principalement des Shelly, sélectionnez l'un d'eux comme scanner de référence.\n\n- Choisissez un appareil et un scanner ci-dessous.\n- Placez physiquement l'appareil à exactement 1 mètre du scanner, sans obstacles.\n- Cliquez sur 'SOUMETTRE' et notez les valeurs RSSI.\n- Une fois le signal stabilisé, entrez cette valeur dans `Puissance de référence` et cliquez sur 'SOUMETTRE'.\n- Expérimentez avec différentes valeurs d'`Atténuation` en vérifiant à une plus grande distance (ex. 5 mètres).\n- Une fois satisfait, cochez 'Enregistrer et fermer' et cliquez sur 'SOUMETTRE'.\n{details_end}\n{suffix}",
+        "data": {
+          "configured_devices": "Appareil",
+          "configured_scanners": "Scanner",
+          "save_and_close": "Enregistrer et fermer",
+          "attenuation": "Atténuation",
+          "ref_power": "Puissance de référence"
+        },
+        "data_description": {
+          "save_and_close": "Une fois l'étalonnage terminé, cochez cette case et cliquez sur Soumettre pour enregistrer la configuration.",
+          "attenuation": "Ajustez l'atténuation pour faire correspondre la distance estimée avec la distance physique réelle.",
+          "ref_power": "Entrez la valeur RSSI moyenne détectée à 1 mètre de distance."
+        }
+      },
+      "calibration2_scanners": {
+        "title": "Étalonnage 2 : Décalage par scanner",
+        "description": "Facultatif : ajustez la sensibilité de chaque scanner par rapport à la valeur globale. Laissez à zéro le scanner utilisé lors de l'étape précédente.\n\n{suffix}",
+        "data": {
+          "configured_devices": "Appareil",
+          "save_and_close": "Enregistrer et fermer",
+          "scanner_info": "Décalage RSSI par scanner"
+        },
+        "data_description": {
+          "scanner_info": "Laissez à zéro pour utiliser les paramètres globaux. Les valeurs négatives augmentent la distance estimée, les valeurs positives la réduisent."
         }
       }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "distance": {
+        "name": "Distance (Fallback)"
+      },
+      "area": {
+        "name": "Radar Room"
+      }
+    }
+  },
+  "services": {
+    "dump_devices": {
+      "name": "Exporter les appareils",
+      "description": "Renvoie la structure de données interne pour le débogage, avec le RSSI et d'autres informations pour chaque scanner.",
+      "fields": {
+        "addresses": {
+          "name": "Adresses MAC",
+          "description": "Liste d'adresses MAC séparées par des espaces. Si vide, toutes les adresses sont renvoyées."
+        },
+        "configured_devices": {
+          "name": "Appareils configurés uniquement",
+          "description": "Sélectionnez pour n'inclure que les scanners et les appareils explicitement configurés."
+        },
+        "redact": {
+          "name": "Masquer MAC",
+          "description": "Définissez sur VRAI (TRUE) pour masquer une partie des adresses MAC par souci de confidentialité."
+        }
+      }
+    },
+    "calibrate_anchor": {
+      "name": "Calibrer l'Ancre (Proxy)",
+      "description": "Associe un appareil connu à un scanner (ancre) pour étalonner le signal de référence à 1 mètre.",
+      "fields": {
+        "scanner_id": {
+          "name": "ID du Scanner",
+          "description": "L'adresse MAC ou l'ID du scanner/proxy (ex. votre Shelly ou ESPHome)."
+        },
+        "ref_rssi": {
+          "name": "RSSI de Référence",
+          "description": "Valeur RSSI de référence à 1 mètre de distance."
+        }
+      }
+    },
+    "map_room_point": {
+      "name": "Cartographier un Point (Radar)",
+      "description": "Prend une empreinte radio (Fingerprint) de tous les scanners visibles actuellement et l'associe à la pièce spécifiée.",
+      "fields": {
+        "room_name": {
+          "name": "Nom de la Pièce",
+          "description": "Nom de la pièce où vous vous trouvez (ex. Cuisine, Salon, Salle de bain)."
+        },
+        "target_mac": {
+          "name": "MAC de l'Appareil",
+          "description": "L'adresse MAC de l'appareil que vous utilisez pour cartographier (ex. votre smartphone)."
+        }
+      }
+    }
+  },
+  "issues": {
+    "scanner_without_area": {
+      "title": "Certains proxys Bluetooth n'ont pas de ZONE",
+      "description": "BLE Radar exige que tous les proxys Bluetooth aient une zone (Area) valide attribuée pour fonctionner correctement en mode fallback. Attribuez une zone en visitant la page de l'appareil (via `Appareils et Services`), puis cliquez sur l'icône du crayon en haut à droite. Les proxys suivants n'ont pas de zone attribuée :\n\n{scannerlist}"
     }
   }
 }
