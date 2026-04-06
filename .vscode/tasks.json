@@ -2,31 +2,31 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Run Home Assistant using devscript on port 9123",
+      "label": "Avvia BLE Radar (devscript porta 9123)",
       "type": "shell",
       "command": "scripts/develop",
       "problemMatcher": []
     },
     {
-      "label": "Run Home Assistant on port 9123",
+      "label": "Avvia Home Assistant Container",
       "type": "shell",
       "command": "container start",
       "problemMatcher": []
     },
     {
-      "label": "Run Home Assistant configuration against /config",
+      "label": "Controlla configurazione Radar",
       "type": "shell",
       "command": "container check",
       "problemMatcher": []
     },
     {
-      "label": "Upgrade Home Assistant to latest dev",
+      "label": "Aggiorna Home Assistant (dev)",
       "type": "shell",
       "command": "container install",
       "problemMatcher": []
     },
     {
-      "label": "Install a specific version of Home Assistant",
+      "label": "Installa versione specifica HA",
       "type": "shell",
       "command": "container set-version",
       "problemMatcher": []
