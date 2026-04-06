@@ -1,4 +1,4 @@
-"""Create device_tracker entities for Bermuda devices."""
+"""Create device_tracker entities for BLE Radar devices."""
 
 from __future__ import annotations
 
@@ -36,54 +36,49 @@ async def async_setup_entry(
     def device_new(address: str) -> None:
         """
         Create entities for newly-found device.
-
-        Called from the data co-ordinator when it finds a new device that needs
-        to have sensors created. Not called directly, but via the dispatch
-        facility from HA.
-        Make sure you have a full list of scanners ready before calling this.
         """
         if address not in created_devices:
             entities = []
             entities.append(BermudaDeviceTracker(coordinator, entry, address))
-            # We set update before add to False because we are being
-            # call(back(ed)) from the update, so causing it to call another would be... bad.
             async_add_devices(entities, False)
             created_devices.append(address)
-        else:
-            # _LOGGER.debug(
-            #     "Ignoring create request for existing dev_tracker %s", address
-            # )
-            pass
+        
         # tell the co-ord we've done it.
         coordinator.device_tracker_created(address)
 
     # Connect device_new to a signal so the coordinator can call it
     entry.async_on_unload(async_dispatcher_connect(hass, SIGNAL_DEVICE_NEW, device_new))
 
-    # Now we must tell the co-ord to do initial refresh, so that it will call our callback.
-    # await coordinator.async_config_entry_first_refresh()
-
 
 class BermudaDeviceTracker(BermudaEntity, BaseTrackerEntity):
-    """A trackable Bermuda Device."""
+    """A trackable BLE Radar Device."""
 
     _attr_should_poll = False
     _attr_has_entity_name = True
-    _attr_name = "Bermuda Tracker"
+    _attr_name = "Radar Tracker"
 
     @property
     def unique_id(self):
-        """
-        "Uniquely identify this sensor so that it gets stored in the entity_registry,
-        and can be maintained / renamed etc by the user.
-        """
-        return self._device.unique_id
+        """Uniquely identify this sensor so that it gets stored in the entity_registry."""
+        return f"{self._device.unique_id}_radar_tracker"
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:
-        """Return extra state attributes for this device."""
+        """Return extra state attributes for this device (Radar Mapping Info)."""
+        attrs = {
+            "area": self._device.area_name,
+            "radar_room": self._device.radar_room,
+        }
+        
+        # Aggiungiamo il punteggio di precisione (Distanza Euclidea) se disponibile
+        if self._device.radar_match_dist is not None:
+            attrs["precision_score"] = round(self._device.radar_match_dist, 2)
+            
+        # Manteniamo il proxy più vicino come informazione di debug
         _scannername = self._device.area_advert.name if self._device.area_advert is not None else None
-        return {"scanner": _scannername, "area": self._device.area_name}
+        attrs["closest_scanner"] = _scannername
+        
+        return attrs
 
     @property
     def state(self) -> str:
