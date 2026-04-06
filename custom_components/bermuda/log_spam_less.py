@@ -1,4 +1,4 @@
-"""Custom logging class for Bermuda."""
+"""Custom logging class for BLE Radar (Bermuda fork)."""
 
 from __future__ import annotations
 
