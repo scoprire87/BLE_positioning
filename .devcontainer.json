@@ -1,15 +1,15 @@
 {
-  "name": "ludeeus/integration_blueprint",
+  "name": "BLE Radar Development",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "postCreateCommand": "scripts/setup",
   "forwardPorts": [8123, 5678],
   "portsAttributes": {
     "8123": {
-      "label": "Home Assistant",
+      "label": "Home Assistant (Radar)",
       "onAutoForward": "silent"
     },
     "5678": {
-      "label": "Debugger",
+      "label": "Debugger (Python)",
       "onAutoForward": "silent"
     }
   },
@@ -43,3 +43,4 @@
     "ghcr.io/devcontainers/features/rust:1": {}
   }
 }
+ 
