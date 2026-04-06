@@ -1,41 +1,36 @@
-"""Test Bermuda BLE Trilateration config flow."""
+"""Test BLE Radar config flow."""
 
 from __future__ import annotations
 
 from homeassistant import config_entries
 from homeassistant import data_entry_flow
 from homeassistant.core import HomeAssistant
-
-# from homeassistant.core import HomeAssistant  # noqa: F401
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.bermuda.const import DOMAIN
-from custom_components.bermuda.const import NAME
+# Aggiornamento dei percorsi dei moduli
+from custom_components.ble_radar.const import DOMAIN
+from custom_components.ble_radar.const import NAME
 
-# from .const import MOCK_OPTIONS
 from .const import MOCK_CONFIG
 from .const import MOCK_OPTIONS_GLOBALS
 
 
-# Here we simiulate a successful config flow from the backend.
-# Note that we use the `bypass_get_data` fixture here because
-# we want the config flow validation to succeed during the test.
+# Simula un flusso di configurazione riuscito dal backend.
+# Usiamo la fixture `bypass_get_data` affinché la convalida riesca durante il test.
 async def test_successful_config_flow(hass, bypass_get_data):
     """Test a successful config flow."""
-    # Initialize a config flow
+    # Inizializza il flusso di configurazione
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
 
-    # Check that the config flow shows the user form as the first step
+    # Verifica che il primo passaggio mostri il modulo utente
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user"
 
-    # If a user were to enter `test_username` for username and `test_password`
-    # for password, it would result in this function call
+    # Simula l'inserimento dei dati utente
     result = await hass.config_entries.flow.async_configure(result["flow_id"], user_input=MOCK_CONFIG)
 
-    # Check that the config flow is complete and a new entry is created with
-    # the input data
+    # Verifica che il flusso sia completo e che venga creata una nuova voce
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert result["title"] == NAME
     assert result["data"] == {"source": "user"}
@@ -43,10 +38,8 @@ async def test_successful_config_flow(hass, bypass_get_data):
     assert result["result"]
 
 
-# In this case, we want to simulate a failure during the config flow.
-# We use the `error_on_get_data` mock instead of `bypass_get_data`
-# (note the function parameters) to raise an Exception during
-# validation of the input config.
+# Simula un fallimento durante il flusso di configurazione.
+# Usiamo `error_on_get_data` per sollevare un'eccezione durante la convalida.
 async def test_failed_config_flow(hass, error_on_get_data):
     """Test a failed config flow due to credential validation failure."""
 
@@ -61,17 +54,17 @@ async def test_failed_config_flow(hass, error_on_get_data):
     assert result.get("errors") is None
 
 
-# Our config flow also has an options flow, so we must test it as well.
-async def test_options_flow(hass: HomeAssistant, setup_bermuda_entry: MockConfigEntry):
+# Poiché l'integrazione ha un flusso di opzioni, testiamo anche quello.
+async def test_options_flow(hass: HomeAssistant, setup_ble_radar_entry: MockConfigEntry):
     """Test an options flow."""
-    # Go through options flow
-    result = await hass.config_entries.options.async_init(setup_bermuda_entry.entry_id)
+    # Avvia il flusso delle opzioni
+    result = await hass.config_entries.options.async_init(setup_ble_radar_entry.entry_id)
 
-    # Verify that the first options step is a user form
+    # Verifica che il primo passaggio sia un menu (come definito nel tuo config_flow)
     assert result.get("type") == FlowResultType.MENU
     assert result.get("step_id") == "init"
 
-    # select the globalopts menu option
+    # Seleziona l'opzione del menu 'globalopts'
     result = await hass.config_entries.options.async_configure(
         result["flow_id"], user_input={"next_step_id": "globalopts"}
     )
@@ -79,15 +72,15 @@ async def test_options_flow(hass: HomeAssistant, setup_bermuda_entry: MockConfig
     assert result.get("type") == FlowResultType.FORM
     assert result.get("step_id") == "globalopts"
 
-    # Enter some fake data into the form
+    # Inserisce dati finti nel modulo
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
         user_input=MOCK_OPTIONS_GLOBALS,
     )
 
-    # Verify that the flow finishes
+    # Verifica che il flusso finisca correttamente
     assert result.get("type") == FlowResultType.CREATE_ENTRY
     assert result.get("title") == NAME
 
-    # Verify that the options were updated
-    assert setup_bermuda_entry.options == MOCK_OPTIONS_GLOBALS
+    # Verifica che le opzioni siano state aggiornate nell'entry
+    assert setup_ble_radar_entry.options == MOCK_OPTIONS_GLOBALS
