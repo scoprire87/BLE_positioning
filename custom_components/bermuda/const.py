@@ -12,7 +12,7 @@ from homeassistant.const import Platform
 from .log_spam_less import BermudaLogSpamLess
 
 NAME = "BLE Radar"
-DOMAIN = "bermuda"
+DOMAIN = "ble_radar"
 DOMAIN_DATA = f"{DOMAIN}_data"
 VERSION = "1.0.0"
 
