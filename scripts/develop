@@ -2,37 +2,36 @@
 
 set -e
 
-# #### Oh, hey...
-# If you're using vscode, rather than using this I'd
-# suggest running the debugger directly. As of now there's
-# a working(!) debugpy entry in launch.json (just hit F5)
+# #### Ehi...
+# Se stai usando VS Code, invece di usare questo script ti
+# suggerisco di avviare il debugger direttamente. C'è una voce
+# funzionante di debugpy in launch.json (basta premere F5).
 
 
 cd "$(dirname "$0")/.."
 
 if [[ ! -f "$VENV/bin/activate" ]]; then
-    echo "ERROR: No venv, make sure you run setup first!"
+    echo "ERRORE: Nessun venv trovato, assicurati di eseguire prima il setup!"
     exit 1
 fi
 
 source $VENV/bin/activate
 
 
-# Create config dir if not present
+# Crea la cartella config se non è presente
 if [[ ! -d "${PWD}/config" ]]; then
     mkdir -p "${PWD}/config"
     hass --config "${PWD}/config" --script ensure_config
 fi
 
-# Set the path to custom_components
-## This let's us have the structure we want <root>/custom_components/integration_blueprint
-## while at the same time have Home Assistant configuration inside <root>/config
-## without resulting to symlinks.
+# Imposta il percorso per i custom_components
+## Questo ci permette di avere la struttura <root>/custom_components/ble_radar
+## e contemporaneamente la configurazione di Home Assistant dentro <root>/config
+## senza ricorrere a symlink.
 #
-# Meh.. this used to work with the python extensions built-in debugger,
-# but that's deprecated and the below didn't seem to work with the
-# debugpy extension. Instead don't use this script and just hit F5.
+# Nota: questo metodo funzionava con il debugger integrato di Python (deprecato).
+# Per il nuovo debugger debugpy, è meglio usare direttamente F5 in VS Code.
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
-# Start Home Assistant
+# Avvia Home Assistant
 hass --config "${PWD}/config" --debug
