@@ -1,3 +1,3 @@
-"""Tests for Bermuda BLE Trilateration integration."""
+"""Tests for BLE Radar integration."""
 
 from __future__ import annotations
