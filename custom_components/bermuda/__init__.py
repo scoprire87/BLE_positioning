@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import voluptuous as vol
 from homeassistant.core import callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
@@ -18,6 +19,7 @@ from homeassistant.helpers.entity_registry import async_migrate_entries
 from .const import _LOGGER, DOMAIN, PLATFORMS, STARTUP_MESSAGE
 from .coordinator import BermudaDataUpdateCoordinator
 from .util import mac_math_offset, mac_norm
+from .storage import RadarStorage  # <-- NUOVO: Importa il gestore della mappa
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -32,6 +34,7 @@ class BermudaData:
     """Holds global data for Bermuda."""
 
     coordinator: BermudaDataUpdateCoordinator
+    storage: RadarStorage  # <-- NUOVO: Aggiunto lo storage per le calibrazioni
 
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -41,8 +44,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: BermudaConfigEntry) -> b
     """Set up this integration using UI."""
     if hass.data.get(DOMAIN) is None:
         _LOGGER.info(STARTUP_MESSAGE)
+    
+    # --- NUOVO: Inizializza lo storage della mappa ---
+    radar_storage = RadarStorage(hass)
+
     coordinator = BermudaDataUpdateCoordinator(hass, entry)
-    entry.runtime_data = BermudaData(coordinator)
+    entry.runtime_data = BermudaData(coordinator, radar_storage)
 
     async def on_failure():
         _LOGGER.debug("Coordinator last update failed, rasing ConfigEntryNotReady")
@@ -55,6 +62,59 @@ async def async_setup_entry(hass: HomeAssistant, entry: BermudaConfigEntry) -> b
         await on_failure()
     if not coordinator.last_update_success:
         await on_failure()
+
+    # --- INIZIO NUOVO CODICE: Servizi di Calibrazione ---
+    
+    async def handle_calibrate_anchor(call):
+        """Associa un dispositivo a uno scanner (ancora) per tarare il segnale."""
+        scanner_id = call.data.get("scanner_id")
+        ref_rssi = call.data.get("ref_rssi", -59)
+        radar_storage.save_anchor(scanner_id, ref_rssi)
+        _LOGGER.info("Calibrata ancora %s con RSSI %s", scanner_id, ref_rssi)
+
+    async def handle_map_room_point(call):
+        """Salva l'impronta digitale radio di un punto/stanza."""
+        room_name = call.data.get("room_name")
+        target_mac = call.data.get("target_mac")
+
+        # Recupera il vettore RSSI attuale per il target_mac dal coordinator
+        fingerprint = {}
+        if target_mac:
+            target_mac_norm = mac_norm(target_mac)
+            if target_mac_norm in coordinator.devices:
+                device = coordinator.devices[target_mac_norm]
+                # Estrae i dati RSSI da tutti gli scanner che vedono il dispositivo in questo momento
+                for scanner_mac, scanner_data in device.scanners.items():
+                    fingerprint[scanner_mac] = scanner_data.rssi
+
+        if fingerprint:
+            radar_storage.save_room_point(room_name, fingerprint)
+            _LOGGER.info("Mappato punto in %s con %s scanner", room_name, len(fingerprint))
+        else:
+            _LOGGER.warning("Impossibile mappare %s: nessun segnale trovato per %s", room_name, target_mac)
+
+    # Registra il servizio per calibrare gli Shelly/Proxy
+    hass.services.async_register(
+        DOMAIN,
+        "calibrate_anchor",
+        handle_calibrate_anchor,
+        schema=vol.Schema({
+            vol.Required("scanner_id"): cv.string,
+            vol.Optional("ref_rssi", default=-59): int,
+        })
+    )
+
+    # Registra il servizio per la Mappatura delle Stanze (girando per casa)
+    hass.services.async_register(
+        DOMAIN,
+        "map_room_point",
+        handle_map_room_point,
+        schema=vol.Schema({
+            vol.Required("room_name"): cv.string,
+            vol.Required("target_mac"): cv.string,
+        })
+    )
+    # --- FINE NUOVO CODICE ---
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -69,15 +129,6 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: BermudaConfigEn
     _oldversion = f"{config_entry.version}.{config_entry.minor_version}"
 
     if config_entry.version == 3:  # it won't be.
-        # Bogus version for now, wanted to placeholder the migrate_entries / unique_id thing.
-        # If we need to manage unique_id of sensors, we probably just need
-        # to manage the callback, but not worry about the hass update.
-        #
-        # This is lifted from the discussion at https://community.home-assistant.io/t/migrating-unique-ids/348512
-        #
-        # Also worth looking at https://github.com/home-assistant/core/pull/115265/files for an example
-        # of migrating unique_ids from one form to another.
-        #
         old_unique_id = config_entry.unique_id
         new_unique_id = mac_math_offset(old_unique_id, 3)
 
@@ -107,9 +158,6 @@ async def async_remove_config_entry_device(
     for domain, ident in device_entry.identifiers:
         try:
             if domain == DOMAIN:
-                # the identifier should be the base device address, and
-                # may have "_range" or some other per-sensor suffix.
-                # The address might be a mac address, IRK or iBeacon uuid
                 address = ident.split("_")[0]
         except KeyError:
             pass
@@ -119,8 +167,6 @@ async def async_remove_config_entry_device(
         except KeyError:
             _LOGGER.warning("Failed to locate device entry for %s", address)
         return True
-    # Even if we don't know this address it probably just means it's stale or from
-    # a previous version that used weirder names. Allow it.
     _LOGGER.warning(
         "Didn't find address for %s but allowing deletion to proceed.",
         device_entry.name,
