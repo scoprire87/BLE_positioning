@@ -1,15 +1,46 @@
 dump_devices:
   name: Dump devices
+  description: "Restituisce un log con i dati diagnostici dei dispositivi BLE rilevati."
   fields:
     addresses:
+      description: "Lista di indirizzi MAC separati da spazio da includere nel dump."
       required: false
       example: "EE:E8:37:9F:6B:54 C7:B8:C6:B0:27:11 AA:AA:AA:AA:AA:AA"
       default: ""
     configured_devices:
+      description: "Includi i dispositivi configurati nel dump."
       required: false
       example: "False"
       default: true
     redact:
+      description: "Nascondi i MAC address reali per privacy (utile se devi condividere il log per debug)."
       required: false
       example: "False"
       default: false
+
+calibrate_anchor:
+  name: Calibra Ancora (Proxy)
+  description: "Associa un dispositivo noto a uno scanner (ancora) per tarare il segnale di riferimento a 1 metro."
+  fields:
+    scanner_id:
+      description: "L'indirizzo MAC o l'ID dello scanner/proxy (es. il tuo Shelly o ESPHome)."
+      required: true
+      example: "A1:B2:C3:D4:E5:F6"
+    ref_rssi:
+      description: "Valore RSSI di riferimento a 1 metro di distanza."
+      required: false
+      example: -59
+      default: -59
+
+map_room_point:
+  name: Mappa Punto Stanza (Radar)
+  description: "Scatta una fotografia radio (Fingerprint) di tutti gli scanner che vedono il dispositivo target in questo momento e la associa alla stanza specificata."
+  fields:
+    room_name:
+      description: "Nome della stanza in cui ti trovi (es. Cucina, Salotto, Bagno)."
+      required: true
+      example: "Salotto"
+    target_mac:
+      description: "L'indirizzo MAC del dispositivo che stai usando per mappare (es. il tuo smartphone o un beacon specifico)."
+      required: true
+      example: "11:22:33:44:55:66"
