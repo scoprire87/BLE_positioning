@@ -1,3 +1,4 @@
+# Dipendenze core per lo sviluppo di BLE Radar
 aiofiles
 aiousbwatcher
 colorlog==6.9.0
