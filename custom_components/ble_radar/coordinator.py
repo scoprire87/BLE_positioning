@@ -739,8 +739,7 @@ class BermudaDataUpdateCoordinator(DataUpdateCoordinator):
 
                 # 2. Chiediamo al KNN quale stanza corrisponde
                 best_room, match_distance, *_ = find_best_room_match(current_fingerprint, saved_map)
-                best_room = match_result[0]
-                match_distance = match_result[1]
+                
 
 
                 if best_room != "Sconosciuta":
