@@ -1,0 +1,145 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "BLE Radar",
+        "description": "Se hai bisogno di aiuto per la configurazione, dai un'occhiata alla pagina [GitHub](https://github.com/scoprire87/BLE_positioning).",
+        "data": {
+          "username": "Nome Utente",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "auth": "Nome Utente o Password errati."
+    },
+    "abort": {
+      "single_instance_allowed": "È consentita solo una singola configurazione per questa integrazione."
+    }
+  },
+  "options": {
+    "error": {
+      "some_active": "Hai almeno alcuni dispositivi attivi, ottimo.",
+      "no_scanners": "Devi configurare alcuni scanner Bluetooth prima che BLE Radar possa funzionare. \nUn bluetooth_proxy di ESPHome, un proxy Shelly o un adattatore Bluetooth locale andranno benissimo per iniziare.",
+      "no_devices": "Nessun dispositivo Bluetooth viene rilevato attivamente dai tuoi scanner. \nDovrai risolvere questo problema affinché BLE Radar possa mappare le stanze."
+    },
+    "step": {
+      "init": {
+        "title": "Configurazione BLE Radar",
+        "description": "BLE Radar attualmente rileva:\n- {device_counter_active} attivi su {device_counter_devices} dispositivi Bluetooth totali.\n- {scanner_counter_active} attivi su {scanner_counter_scanners} scanner Bluetooth totali.\n\n{status}"
+      },
+      "globalopts": {
+        "title": "Impostazioni Globali (Fallback)",
+        "data": {
+          "max_area_radius": "Raggio massimo in metri per l'Area (Fallback)",
+          "max_velocity": "Velocità massima (m/s) - ignora le letture troppo veloci. 3m/s è un buon valore.",
+          "devtracker_nothome_timeout": "Timeout Devtracker (secondi) prima di segnare un dispositivo come 'Non a casa'.",
+          "update_interval": "Intervallo di aggiornamento sensori (secondi).",
+          "smoothing_samples": "Campioni di smoothing - quanti campioni usare per stabilizzare il segnale.",
+          "attenuation": "Attenuazione - Parametro ambientale per il calcolo della distanza (Fallback).",
+          "ref_power": "Potenza di Riferimento - RSSI a 1 metro di distanza (Fallback).",
+          "configured_devices": "Dispositivi Configurati - Scegli quali dispositivi o beacon tracciare."
+        },
+        "data_description": {
+          "max_area_radius": "Se il Radar fallisce, un dispositivo verrà assegnato allo scanner più vicino se si trova entro questo raggio.",
+          "max_velocity": "Se una lettura indica che un dispositivo si sta allontanando a una velocità superiore, viene ignorata. Una persona cammina a circa 1.4m/s.",
+          "devtracker_nothome_timeout": "Quanto tempo attendere prima di segnare un dispositivo tracker come 'Fuori casa' quando sparisce dal radar. 300 secondi (5 minuti) è un buon compromesso.",
+          "update_interval": "Frequenza di aggiornamento delle entità in Home Assistant.",
+          "smoothing_samples": "Quanti pacchetti BLE usare per calcolare la media del segnale. Valori alti (es. 20) rendono la posizione più stabile ma meno reattiva.",
+          "attenuation": "Usato solo per il sistema di fallback. Regola questo valore per compensare gli ostacoli ambientali.",
+          "ref_power": "Usato solo per il sistema di fallback. Posiziona il beacon a 1 metro dallo scanner e regola questo valore."
+        }
+      },
+      "selectdevices": {
+        "title": "Seleziona Dispositivi",
+        "description": "Scegli quali dispositivi vuoi tracciare nella tua mappa. Se la lista è vuota, BLE Radar non sta ricevendo dati. Assicurati di aver configurato i proxy Bluetooth (ESPHome o Shelly)."
+      },
+      "calibration1_global": {
+        "title": "Calibrazione 1: Globale (Fallback)",
+        "description": "Questo passaggio imposta i valori predefiniti per il calcolo geometrico delle distanze (usato quando la mappatura Radar non trova la stanza).\n\n{details}\n{summary}\nClicca qui per le istruzioni!{summary_end}\n\nSeleziona il tuo hardware più comune come 'riferimento'. Ad esempio, se usi principalmente Shelly, seleziona uno Shelly come scanner di riferimento.\n\n- Scegli un dispositivo e uno scanner.\n- Metti fisicamente il dispositivo a ESATTAMENTE 1 metro dallo scanner, senza ostacoli.\n- Clicca su INVIA e osserva i valori RSSI. \n- Quando il segnale è stabile, inserisci quel valore in `Potenza di Riferimento` e clicca INVIA.\n- Regola l'Attenuazione se necessario provando a 5 metri di distanza.\n- Seleziona 'Salva e Chiudi' quando hai finito.\n{details_end}\n{suffix}",
+        "data": {
+          "configured_devices": "Dispositivo",
+          "configured_scanners": "Scanner",
+          "save_and_close": "Salva e Chiudi",
+          "attenuation": "Attenuazione",
+          "ref_power": "Potenza di Riferimento"
+        },
+        "data_description": {
+          "save_and_close": "Spunta questa casella e clicca Invia per salvare definitivamente la configurazione.",
+          "attenuation": "Regola l'attenuazione per far combaciare la distanza stimata con la realtà.",
+          "ref_power": "Inserisci il valore RSSI medio rilevato a 1 metro di distanza."
+        }
+      },
+      "calibration2_scanners": {
+        "title": "Calibrazione 2: Offset Scanner",
+        "description": "Opzionale: regola la sensibilità di ogni singolo scanner rispetto a quello globale. Lascia a 0 lo scanner usato nel passaggio precedente.\n\n{suffix}",
+        "data": {
+          "configured_devices": "Dispositivo",
+          "save_and_close": "Salva e Chiudi",
+          "scanner_info": "Offset RSSI per Scanner"
+        },
+        "data_description": {
+          "scanner_info": "Lascia a zero per usare le impostazioni globali. Valori negativi aumentano la distanza stimata, positivi la riducono."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "distance": {
+        "name": "Distanza (Fallback)"
+      },
+      "area": {
+        "name": "Radar Room"
+      }
+    }
+  },
+  "services": {
+    "dump_devices": {
+      "name": "Esporta Dispositivi",
+      "description": "Restituisce un log con i dati diagnostici dei dispositivi BLE rilevati. Utile per il debug.",
+      "fields": {
+        "addresses": {
+          "name": "Indirizzi MAC",
+          "description": "Lista opzionale di indirizzi MAC separati da spazio da includere nell'esportazione."
+        },
+        "configured_devices": {
+          "name": "Solo Dispositivi Configurati",
+          "description": "Includi solo i dispositivi che hai esplicitamente configurato per il tracciamento."
+        },
+        "redact": {
+          "name": "Nascondi MAC",
+          "description": "Imposta a VERO per nascondere parte dei MAC address per privacy."
+        }
+      }
+    },
+    "calibrate_anchor": {
+      "name": "Calibra Ancora (Proxy)",
+      "description": "Associa un dispositivo noto a uno scanner (ancora) per tarare il segnale di riferimento a 1 metro.",
+      "fields": {
+        "scanner_id": {
+          "name": "ID Scanner",
+          "description": "L'indirizzo MAC o l'ID dello scanner/proxy (es. il tuo Shelly o ESPHome)."
+        },
+        "ref_rssi": {
+          "name": "RSSI di Riferimento",
+          "description": "Valore RSSI di riferimento a 1 metro di distanza."
+        }
+      }
+    },
+    "map_room_point": {
+      "name": "Mappa Punto Stanza (Radar)",
+      "description": "Scatta una fotografia radio (Fingerprint) di tutti gli scanner in questo momento e la associa alla stanza specificata.",
+      "fields": {
+        "room_name": {
+          "name": "Nome Stanza",
+          "description": "Nome della stanza in cui ti trovi (es. Cucina, Salotto, Bagno)."
+        },
+        "target_mac": {
+          "name": "MAC Dispositivo",
+          "description": "L'indirizzo MAC del dispositivo che stai usando per mappare (es. il tuo smartphone)."
+        }
+      }
+    }
+  }
+}
