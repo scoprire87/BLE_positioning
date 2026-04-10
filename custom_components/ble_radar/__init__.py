@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_registry import async_migrate_entries
 from .const import _LOGGER, DOMAIN, PLATFORMS, STARTUP_MESSAGE
 from .coordinator import BermudaDataUpdateCoordinator
 from .util import mac_math_offset, mac_norm
-from .storage import RadarStorage  # <-- NUOVO: Importa il gestore della mappa
+from .storage import RadarStorage
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -33,8 +33,8 @@ type BermudaConfigEntry = ConfigEntry[BermudaData]
 class BermudaData:
     """Holds global data for Bermuda."""
 
-    coordinator: BermudaDataUpdateCoordinator
-    storage: RadarStorage  # <-- NUOVO: Aggiunto lo storage per le calibrazioni
+    storage: RadarStorage  # <-- Spostato in alto
+    coordinator: BermudaDataUpdateCoordinator | None = None  # <-- Reso opzionale per l'inizializzazione
 
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -45,11 +45,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: BermudaConfigEntry) -> b
     if hass.data.get(DOMAIN) is None:
         _LOGGER.info(STARTUP_MESSAGE)
     
-    # --- NUOVO: Inizializza lo storage della mappa ---
+    # 1. Inizializza lo storage della mappa
     radar_storage = RadarStorage(hass)
 
+    # 2. ASSEGNA SUBITO runtime_data in modo che il coordinatore possa trovarlo
+    entry.runtime_data = BermudaData(storage=radar_storage)
+
+    # 3. ORA inizializza il coordinatore (che leggerà con successo entry.runtime_data.storage)
     coordinator = BermudaDataUpdateCoordinator(hass, entry)
-    entry.runtime_data = BermudaData(coordinator, radar_storage)
+    
+    # 4. Aggiorna l'oggetto inserendo il coordinatore
+    entry.runtime_data.coordinator = coordinator
 
     async def on_failure():
         _LOGGER.debug("Coordinator last update failed, rasing ConfigEntryNotReady")
@@ -154,6 +160,9 @@ async def async_remove_config_entry_device(
 ) -> bool:
     """Implements user-deletion of devices from device registry."""
     coordinator: BermudaDataUpdateCoordinator = config_entry.runtime_data.coordinator
+    if not coordinator:
+        return True
+        
     address = None
     for domain, ident in device_entry.identifiers:
         try:
