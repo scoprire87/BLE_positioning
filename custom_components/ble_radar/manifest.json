@@ -1,0 +1,21 @@
+{
+  "domain": "ble_radar",
+  "name": "BLE Radar",
+  "bluetooth": [
+    {
+      "connectable": false,
+      "manufacturer_id": 76
+    }
+  ],
+  "codeowners": ["@scoprire87"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters", "device_tracker", "private_ble_device"],
+  "documentation": "https://github.com/scoprire87/BLE_positioning",
+  "integration_type": "device",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/scoprire87/BLE_positioning/issues",
+  "requirements": [
+    "numpy>=1.21.0"
+  ],
+  "version": "1.0.0"
+}
